@@ -1,118 +1,165 @@
-function Blot (individual) {
-    var html = "";
-    html += "<li>";
-    for (var i = 0; i < individual.genes.length; i++) {
-        html += individual.genes[i];
+var solution_text = "Hello machine, this is dog. Hi dog, machine here.",
+    config        = { length: text2bin(solution_text).length };
+
+function Blotter (canvas) {
+
+    var generation = 0,
+        context = canvas.getContext('2d'),
+        height = 2,
+        width = 2;
+
+    function setwidth(number) {
+        canvas.width = number * width;
     }
-    html += "</li>";
-    $('#pcr').append(html);
+
+    function blot (individual) {
+        var genes = individual.getGenes();
+
+        for (var i = 0; i < genes.length; i++) {
+            context.fillStyle = genes[i] ? "black" : "white";
+            context.fillRect(i*width,generation*height,width,height);
+        }
+        generation++;
+    }
+
+    return {
+        blot: blot,
+        setwidth: setwidth
+    }
 }
 
-function Population (size, initialise) {
 
-    this.individuals = this.getBlankIndividuals(size);
+function Population (sizeto, initialise) {
+
+    var individuals = getBlankIndividuals(sizeto),
+        fittest_cache = null;
 
     if (initialise) {
-        for (var i = 0; i < size; i++) {
+        for (var i = 0; i < sizeto; i++) {
             individual = new Individual();
             individual.generateIndividual()
-            this.individuals[i] = individual;
+            individuals[i] = individual;
         }
     }
-}
 
-Population.prototype = {
-    individuals: null,
-
-    getBlankIndividuals: function (size) {
-        var newArray = [];
-        for (var i = 0; i < size; i++) {
+    function getBlankIndividuals(size) {
+        var newArray = [], i;
+        for (i = 0; i < size; i++) {
             newArray.push(new Individual());
         }
         return newArray;
-    },
-    
-    getIndividual: function (i) {
-        return this.individuals[i];
-    },
+    }
 
-    getFittest: function () {
-        var fittest = this.individuals[0];
+    function getIndividual (index) {
+        return individuals[index];
+    }
 
-        for (var i = 0; i < this.size(); i ++) {
-            if (fittest.getFitness() <= this.getIndividual(i).getFitness()) {
-                fittest = this.getIndividual(i);
+    function getFittest () {
+        var fittest = individuals[0];
+
+        if (fittest_cache != null) {
+            return fittest_cache;
+        }
+
+        for (var i = 0; i < individuals.length; i ++) {
+            if (FitnessCalc.getFitness(fittest) <= FitnessCalc.getFitness(individuals[i])) {
+                fittest = individuals[i];
             }
         }
 
+        fittest_cache = fittest;
+
         return fittest;
-    },
-
-    size: function () {
-        return this.individuals.length;
-    },
-
-    saveIndividual: function (index, indiv) {
-        this.individuals[index] = indiv;
     }
 
+    function size() {
+        return individuals.length;
+    }
+
+    function saveIndividual (index, indiv) {
+        individuals[index] = indiv;
+    }
+
+    return {
+        getFittest      : getFittest,
+        getIndividual   : getIndividual,
+        size            : size,
+        saveIndividual  : saveIndividual
+    };
+
 }
 
-function Individual() { 
-   this.defaultGeneLength = 64;
-   
-   this.genes = this.generateBlankIndividual();
+function Individual(defaultGeneLength) { 
 
-   this.fitness = 0;
-}
+    if (typeof defaultGeneLength == "undefined") {
+        defaultGeneLength = config.length;
+    }
 
-Individual.prototype = {
-    defaultGeneLength: null,
-    genes: null,
+    var genes = generateBlankIndividual(),
+        fitnessCache = -1;
 
-    generateBlankIndividual: function () {
+
+    function generateBlankIndividual () {
         newArray = [];
-        for (var i = 0; i < this.defaultGeneLength; i++) {
+        for (var i = 0; i < defaultGeneLength; i++) {
             newArray.push(0);
         }
         return newArray;
-    },
+    }
 
-    generateIndividual: function () {
-        for (var i = 0; i < this.size(); i++) {
-            var gene = Math.round(Math.random());
-            this.genes[i] = gene;
+    function generateIndividual () {
+        var gene;
+
+        for (var i = 0; i < genes.length; i++) {
+            gene = Math.round(Math.random());
+            genes[i] = gene;
         }
-    },
+    }
 
-    setDefaultGeneLength: function (length) {
-        this.defaultGeneLength = length;
-    },
+    function getGene (index) {
+        return genes[index];
+    }
 
-    getGene: function (index) {
-        return this.genes[index];
-    },
+    function getGenes() {
+        return genes;
+    }
 
-    setGene: function (index, value) {
-        this.genes[index] = value;
-        this.fitness = 0;
-    },
+    function setGene (index, value) {
+        genes[index] = value;
+        fitnesscache = 0;
+    }
 
-    size: function() {
-        return this.genes.length;
-    },
+    function size () {
+        return genes.length;
+    }
 
-    getFitness: function () {
-        return FitnessCalc.getFitness(this);
-    },
-
-    toString: function () {
+    function toString () {
         var geneString = "";
         for (var i = 0; i < this.size(); i ++) {
             geneString += this.getGene(i);
         }
         return geneString;
     }
+
+    function setFitnessCache (amount) {
+        fitnessCache = amount;
+    }
+
+    function getFitnessCache() {
+        return fitnessCache;
+    }
+
+    return {
+        setFitnessCache     : setFitnessCache,
+        getFitnessCache     : getFitnessCache,
+        toString            : toString,
+        size                : size,
+        setGene             : setGene,
+        generateIndividual  : generateIndividual,
+        getGenes            : getGenes,
+        getGene             : getGene
+    };
+
 }
 
 var Algorithm = {
@@ -209,10 +256,7 @@ var util = {
 
 var FitnessCalc = {
 
-
-
-    solution: util.getBlankArray(64),
-
+    solution: util.getBlankArray(text2bin(solution_text).length),
 
     setSolution: function (newSolution) {
         solution = [];
@@ -228,12 +272,20 @@ var FitnessCalc = {
     },
 
     getFitness: function (individual) {
-        var fitness = 0;
+        var fitnessCache = individual.getFitnessCache(),
+            fitness = 0;
 
-        for (var i = 0; i < individual.size() && i < this.solution.length; i++) {
-        if (individual.getGene(i) == parseInt(this.solution[i])) {
-                fitness++;
+        if (individual.fitnessCache > -1) {
+            fitness = fitnessCache;
+        } else {
+
+            for (var i = 0; i < individual.size() && i < this.solution.length; i++) {
+            if (individual.getGene(i) == parseInt(this.solution[i])) {
+                    fitness++;
+                }
             }
+            individual.setFitnessCache(fitness);
+
         }
         return fitness;
     },
@@ -243,24 +295,72 @@ var FitnessCalc = {
         return maxFitness;
     }
 }
+//http://stackoverflow.com/questions/8099078/error-converting-a-binary-number-to-ascii-text-with-js
+function bin2text (text) {
+    var output = ''
+    for (var i = 0 ; i < text.length; i+= 8) {
+        var c = 0;
+        for (var j=0; j < 8 ; j++) {
+            c <<= 1;
+            c |= parseInt(text[i + j]); 
+        }
+        output += String.fromCharCode(c);
+    }
+    return output;
+}
 
-function main () {
-    FitnessCalc.setSolution("1111000000000000000000000000000000000000000000000000000000001111");    
+function text2bin (text) {
+
+    var str = text.split('');
+    var binaries = "";
+    var binary = "";
+
+    for (var i = 0; i < str.length; ++i){
+        binary = str[i].charCodeAt(0).toString(2);
+        while (binary.length < 8 ) {
+            binary = "0" + binary;
+        }
+        binaries += binary;
+
+    }
+    return binaries;
+}
+
+    
+//
+
+function main (log) {
+
+    var solution = text2bin(solution_text);
+
+    FitnessCalc.setSolution(solution);
+
     var myPop = new Population(64, true);
     var generationCount = 0;
-    while(myPop.getFittest().getFitness() < FitnessCalc.getMaxFitness()){ 
+    var blotter = Blotter(document.getElementById('gel'));
+
+    blotter.setwidth(text2bin(solution_text).length);
+
+    while(FitnessCalc.getFitness(myPop.getFittest()) < FitnessCalc.getMaxFitness()){ 
         generationCount++; 
-        console.log("Generation: "+generationCount+" Fittest: "+myPop.getFittest().getFitness()); 
+
+        if (log) {
+            console.log("Generation: "+generationCount+" Fittest: "+FitnessCalc.getFitness(myPop.getFittest())); 
+        }
+
+        blotter.blot(myPop.getFittest());
+        $('#progress').append(
+            "<li>" + bin2text(myPop.getFittest().toString()) + "</li>"
+        );
         myPop = Algorithm.evolvePopulation(myPop);
     }
-    console.log("Solution found!");
-    console.log("Generation: " + generationCount);
-    console.log("Genes:");
-    var genestring = "";
-    for (var i = 0; i < myPop.getFittest().genes.length; i++) {
-        genestring +=  myPop.getFittest().genes[i];
+
+    if (log) {
+        console.log("Solution found!");
+        console.log("Generation: " + generationCount);
+        console.log("Genes:");
     }
-    console.log(genestring);
+
 }
 
 //node.js

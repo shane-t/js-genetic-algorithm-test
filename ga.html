@@ -1,13 +1,32 @@
+<!DOCTYPE html>
+
 <html>
 <head>
-<script src="ga.js"></script>
-<script src="http://code.jquery.com/jquery-latest.js"></script> 
+
+  <script src="ga.js"></script>
+  <script src="http://code.jquery.com/jquery-latest.js"></script>
+  <style>
+    body {
+      background: white;
+    }
+    #gel {
+        border: 1px solid blue;
+    }
+    #progress {
+        width: 300px;
+        border: 1px solid black;
+        display: block;
+    }
+   </style>
+
+  <title>genetics</title>
+
 </head>
+
 <body>
-    <div id="pcr">
-        <pre id="westernblot">
-        </pre>
-    </div>
+  <h2>solr</h2>
+  <canvas id="gel" width="300" height="200"></canvas>
+    <button onclick="main()">click</button>
+    <ul id="progress"></ul>
 </body>
 </html>
-
